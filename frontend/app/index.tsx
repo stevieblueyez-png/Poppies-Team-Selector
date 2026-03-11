@@ -1281,6 +1281,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
+  formationHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  calculatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  calculatingText: {
+    color: '#10b981',
+    fontSize: 12,
+  },
   formationScroll: {
     flexGrow: 0,
   },
@@ -1290,9 +1306,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginRight: 8,
+    position: 'relative',
+    alignItems: 'center',
   },
   formationButtonSelected: {
     backgroundColor: '#10b981',
+  },
+  formationButtonRecommended: {
+    backgroundColor: '#1f2937',
+    borderWidth: 2,
+    borderColor: '#fbbf24',
   },
   formationButtonText: {
     color: '#9ca3af',
@@ -1300,6 +1323,28 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   formationButtonTextSelected: {
+    color: '#fff',
+  },
+  formationButtonTextRecommended: {
+    color: '#fbbf24',
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#1f2937',
+    borderRadius: 8,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+  },
+  recommendedText: {
+    color: '#fbbf24',
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  recommendedTextSelected: {
     color: '#fff',
   },
   modeToggle: {
