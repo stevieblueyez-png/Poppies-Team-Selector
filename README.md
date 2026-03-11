@@ -1,6 +1,6 @@
 # Grassroots Football Team Manager
 
-A mobile app for managing your grassroots football team roster, player availability, and generating optimal lineups.
+A mobile & web app for managing your grassroots football team roster, player availability, and generating optimal lineups.
 
 ## Features
 
@@ -15,36 +15,98 @@ A mobile app for managing your grassroots football team roster, player availabil
 
 ## Tech Stack
 
-- **Frontend**: Expo (React Native)
+- **Frontend**: Expo (React Native) with Web support
 - **Backend**: FastAPI (Python)
 - **Database**: MongoDB
 
 ---
 
-## 🚀 Deployment Options
+## ✅ Web Deployment (Vercel)
 
-### Important: This is a Mobile App
+This Expo app **supports web deployment** via `react-native-web`.
 
-This project is an **Expo React Native mobile application**, not a web app. Therefore:
-- ❌ **Cannot deploy to Vercel** (Vercel is for web apps)
-- ❌ **Cannot deploy to Netlify** (Netlify is for web apps)
-- ✅ **Use EAS (Expo Application Services)** for mobile app builds
-- ✅ **Deploy backend separately** to a cloud service
+### Prerequisites
+1. Deploy your backend first (see Backend Deployment section)
+2. Get your deployed backend URL
+
+### Deploy to Vercel
+
+**Option 1: Vercel CLI**
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Set environment variable for backend URL
+cd /app
+vercel env add EXPO_PUBLIC_BACKEND_URL production
+# Enter your backend URL when prompted
+
+# Deploy
+vercel --prod
+```
+
+**Option 2: Vercel Dashboard**
+1. Push your code to GitHub
+2. Import project in Vercel dashboard
+3. Configure:
+   - **Build Command**: `cd frontend && npx expo export --platform web`
+   - **Output Directory**: `frontend/dist`
+   - **Install Command**: `cd frontend && yarn install`
+4. Add environment variable:
+   - `EXPO_PUBLIC_BACKEND_URL` = your backend URL
+5. Deploy
+
+### Local Web Build
+
+```bash
+cd frontend
+
+# Build for web
+yarn web:build
+# or
+npx expo export --platform web
+
+# Preview locally
+yarn web:serve
+# or
+npx serve dist
+```
+
+**Output**: Static files in `frontend/dist/` folder
+
+---
+
+## 📱 Mobile Deployment (EAS Build)
+
+### Prerequisites
+1. Install EAS CLI: `npm install -g eas-cli`
+2. Create Expo account: https://expo.dev
+3. Login: `eas login`
+
+### Build Commands
+
+```bash
+cd frontend
+
+# Configure EAS
+eas build:configure
+
+# Development Build
+eas build --profile development --platform all
+
+# Production Build (for app stores)
+eas build --profile production --platform ios
+eas build --profile production --platform android
+```
 
 ---
 
 ## Backend Deployment
 
-### Option 1: Emergent Deployment (Easiest)
-If you built this in Emergent, use the built-in deployment feature (50 credits/month).
+### Option 1: Emergent Deployment
+Use the built-in deployment feature (50 credits/month).
 
-### Option 2: Manual Deployment (Railway, Render, Fly.io)
-
-**Required Environment Variables:**
-```bash
-MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/
-DB_NAME=football_team_manager
-```
+### Option 2: Railway / Render / Fly.io
 
 **Build Command:**
 ```bash
@@ -56,54 +118,26 @@ pip install -r requirements.txt
 uvicorn server:app --host 0.0.0.0 --port $PORT
 ```
 
-### Option 3: Docker Deployment
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8001
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+**Required Environment Variables:**
+```bash
+MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/
+DB_NAME=football_team_manager
 ```
 
 ---
 
-## Mobile App Deployment (EAS Build)
+## Environment Variables
 
-### Prerequisites
-1. Install EAS CLI: `npm install -g eas-cli`
-2. Create Expo account: https://expo.dev
-3. Login: `eas login`
+### Backend (.env)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MONGO_URL` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/` |
+| `DB_NAME` | Database name | `football_team_manager` |
 
-### Configure EAS
-```bash
-cd frontend
-eas build:configure
-```
-
-### Build Commands
-
-**Development Build (for testing):**
-```bash
-eas build --profile development --platform all
-```
-
-**Production Build (for app stores):**
-```bash
-# iOS (requires Apple Developer account)
-eas build --profile production --platform ios
-
-# Android
-eas build --profile production --platform android
-```
-
-### Update Backend URL for Production
-Before building, update `frontend/.env`:
-```
-EXPO_PUBLIC_BACKEND_URL=https://your-deployed-backend-url.com
-```
+### Frontend (.env)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `EXPO_PUBLIC_BACKEND_URL` | Backend API URL | `https://your-api.railway.app` |
 
 ---
 
@@ -120,33 +154,19 @@ uvicorn server:app --reload --port 8001
 ```bash
 cd frontend
 yarn install
-expo start
+
+# Start for all platforms
+yarn start
+
+# Web only
+yarn web
+
+# iOS only
+yarn ios
+
+# Android only
+yarn android
 ```
-
----
-
-## Environment Variables
-
-### Backend (.env)
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGO_URL` | MongoDB connection string | `mongodb://localhost:27017` |
-| `DB_NAME` | Database name | `football_team_manager` |
-
-### Frontend (.env)
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `EXPO_PUBLIC_BACKEND_URL` | Backend API URL | `https://api.yourapp.com` |
-
----
-
-## Database Setup (MongoDB Atlas - Free Tier)
-
-1. Create account at https://www.mongodb.com/atlas
-2. Create free M0 cluster
-3. Add database user
-4. Get connection string
-5. Add to backend `.env`
 
 ---
 
@@ -157,22 +177,38 @@ expo start
 ├── backend/
 │   ├── server.py          # FastAPI application
 │   ├── requirements.txt   # Python dependencies
-│   ├── .env              # Environment variables
-│   └── .env.example      # Environment template
+│   ├── .env.example       # Environment template
+│   └── Procfile          # Deployment config
 ├── frontend/
 │   ├── app/
 │   │   └── index.tsx     # Main app screen
+│   ├── dist/             # Web build output (generated)
 │   ├── package.json      # Node dependencies
-│   ├── .env              # Environment variables
+│   ├── app.json          # Expo configuration
 │   └── .env.example      # Environment template
+├── vercel.json           # Vercel deployment config
 └── README.md
 ```
 
 ---
 
-## Support
+## Database Setup (MongoDB Atlas - Free)
 
-For issues with:
-- **Emergent deployment**: Contact Emergent support
-- **EAS builds**: Visit https://docs.expo.dev/build/introduction/
-- **App store submission**: Follow platform-specific guidelines
+1. Create account at https://www.mongodb.com/atlas
+2. Create free M0 cluster
+3. Create database user
+4. Whitelist IP addresses (0.0.0.0/0 for all)
+5. Get connection string
+6. Add to backend `.env`
+
+---
+
+## Quick Start Commands
+
+| Action | Command |
+|--------|---------|
+| Build for web | `cd frontend && yarn web:build` |
+| Preview web locally | `cd frontend && yarn web:serve` |
+| Deploy to Vercel | `vercel --prod` |
+| Start dev server | `cd frontend && yarn start` |
+| Run backend | `cd backend && uvicorn server:app --reload` |
