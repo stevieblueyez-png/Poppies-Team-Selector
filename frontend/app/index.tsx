@@ -257,10 +257,10 @@ export default function Index() {
   };
 
   // Delete player
-  const handleDeletePlayer = (playerId: string, playerName: string) => {
+  const handleDeletePlayer = (playerId: string, playerNameToDelete: string) => {
     Alert.alert(
       'Delete Player',
-      `Are you sure you want to remove ${playerName} from the roster?`,
+      `Are you sure you want to remove ${playerNameToDelete} from the roster?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -271,6 +271,8 @@ export default function Index() {
               await fetch(`${API_URL}/api/players/${playerId}`, {
                 method: 'DELETE'
               });
+              setEditPlayerModal(false);
+              setSelectedPlayer(null);
               fetchPlayers();
             } catch (error) {
               console.error('Error deleting player:', error);
