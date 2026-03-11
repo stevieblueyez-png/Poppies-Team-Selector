@@ -306,20 +306,25 @@ export default function Index() {
 
   // Clear all availability
   const clearAllAvailability = async () => {
-    const confirmClear = Platform.OS === 'web'
-      ? window.confirm('This will untick all players. Are you sure?')
-      : await new Promise<boolean>((resolve) => {
-          Alert.alert(
-            'Clear All Availability',
-            'This will untick all players. Are you sure?',
-            [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Clear All', style: 'destructive', onPress: () => resolve(true) }
-            ]
-          );
-        });
+    // Simple confirmation that works on both web and mobile
+    let shouldClear = false;
     
-    if (confirmClear) {
+    if (Platform.OS === 'web') {
+      shouldClear = confirm('This will untick all players. Are you sure?');
+    } else {
+      shouldClear = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'Clear All Availability',
+          'This will untick all players. Are you sure?',
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Clear All', style: 'destructive', onPress: () => resolve(true) }
+          ]
+        );
+      });
+    }
+    
+    if (shouldClear) {
       try {
         const availablePlayers = players.filter(p => p.is_available);
         for (const player of availablePlayers) {
@@ -330,11 +335,6 @@ export default function Index() {
         fetchPlayers();
       } catch (error) {
         console.error('Error clearing availability:', error);
-        if (Platform.OS === 'web') {
-          window.alert('Failed to clear availability');
-        } else {
-          Alert.alert('Error', 'Failed to clear availability');
-        }
       }
     }
   };
