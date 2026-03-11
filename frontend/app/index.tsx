@@ -873,8 +873,16 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Team Manager</Text>
-        <Text style={styles.subtitle}>{players.length} Players</Text>
+        <View style={styles.headerContent}>
+          <Image 
+            source={{ uri: TEAM_LOGO_URL }} 
+            style={styles.teamLogo}
+          />
+          <View>
+            <Text style={styles.title}>Team Manager</Text>
+            <Text style={styles.subtitle}>{players.length} Players</Text>
+          </View>
+        </View>
       </View>
       
       {renderTabs()}
