@@ -99,6 +99,74 @@ export default function Index() {
   // ViewShot ref for capturing lineup
   const lineupViewRef = useRef<ViewShot>(null);
   const [savingLineup, setSavingLineup] = useState(false);
+  
+  // Recommended formation state
+  const [recommendedFormation, setRecommendedFormation] = useState<string | null>(null);
+  const [calculatingBest, setCalculatingBest] = useState(false);
+
+  // Calculate best formation based on green zones in heatmap
+  const calculateBestFormation = useCallback(async () => {
+    const availableCount = players.filter(p => p.is_available).length;
+    if (availableCount < 1) {
+      setRecommendedFormation(null);
+      return;
+    }
+    
+    setCalculatingBest(true);
+    
+    try {
+      const results: { formation: string; greenZones: number; totalRating: number }[] = [];
+      
+      // Test each formation
+      for (const formation of FORMATIONS) {
+        try {
+          const response = await fetch(`${API_URL}/api/lineup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              formation,
+              mode: lineupMode
+            })
+          });
+          
+          if (response.ok) {
+            const data: LineupResponse = await response.json();
+            // Count green zones (rating >= 4)
+            const greenZones = data.heatmap.filter(zone => zone.avg_rating >= 4).length;
+            results.push({
+              formation,
+              greenZones,
+              totalRating: data.total_rating
+            });
+          }
+        } catch (e) {
+          console.error(`Error testing formation ${formation}:`, e);
+        }
+      }
+      
+      // Find the best formation (most green zones, then highest rating as tiebreaker)
+      if (results.length > 0) {
+        results.sort((a, b) => {
+          if (b.greenZones !== a.greenZones) {
+            return b.greenZones - a.greenZones;
+          }
+          return b.totalRating - a.totalRating;
+        });
+        setRecommendedFormation(results[0].formation);
+      }
+    } catch (error) {
+      console.error('Error calculating best formation:', error);
+    } finally {
+      setCalculatingBest(false);
+    }
+  }, [players, lineupMode]);
+
+  // Recalculate best formation when tab changes to lineup or when players/mode changes
+  useEffect(() => {
+    if (activeTab === 'lineup') {
+      calculateBestFormation();
+    }
+  }, [activeTab, players, lineupMode, calculateBestFormation]);
 
   // Fetch players
   const fetchPlayers = useCallback(async () => {
