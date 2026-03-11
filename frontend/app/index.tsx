@@ -1837,4 +1837,20 @@ const styles = StyleSheet.create({
   ratingButtonTextSelected: {
     color: '#fff',
   },
+  deletePlayerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#dc2626',
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 32,
+    marginBottom: 20,
+    gap: 8,
+  },
+  deletePlayerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
