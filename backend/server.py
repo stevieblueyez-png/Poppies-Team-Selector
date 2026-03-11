@@ -175,16 +175,19 @@ class PositionRating(BaseModel):
 class PlayerCreate(BaseModel):
     name: str
     positions: List[PositionRating] = []
+    preferred_foot: str = "right"  # "left" or "right"
 
 class PlayerUpdate(BaseModel):
     name: Optional[str] = None
     positions: Optional[List[PositionRating]] = None
     is_available: Optional[bool] = None
+    preferred_foot: Optional[str] = None
 
 class Player(BaseModel):
     id: str
     name: str
     positions: List[PositionRating] = []
+    preferred_foot: str = "right"
     is_available: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
