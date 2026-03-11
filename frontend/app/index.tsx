@@ -257,31 +257,37 @@ export default function Index() {
   };
 
   // Delete player
-  const handleDeletePlayer = (playerId: string, playerNameToDelete: string) => {
-    Alert.alert(
-      'Delete Player',
-      `Are you sure you want to remove ${playerNameToDelete} from the roster?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await fetch(`${API_URL}/api/players/${playerId}`, {
-                method: 'DELETE'
-              });
-              setEditPlayerModal(false);
-              setSelectedPlayer(null);
-              fetchPlayers();
-            } catch (error) {
-              console.error('Error deleting player:', error);
-              Alert.alert('Error', 'Failed to delete player');
-            }
-          }
+  const handleDeletePlayer = async (playerId: string, playerNameToDelete: string) => {
+    const confirmDelete = Platform.OS === 'web' 
+      ? window.confirm(`Are you sure you want to remove ${playerNameToDelete} from the roster?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'Delete Player',
+            `Are you sure you want to remove ${playerNameToDelete} from the roster?`,
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        });
+    
+    if (confirmDelete) {
+      try {
+        await fetch(`${API_URL}/api/players/${playerId}`, {
+          method: 'DELETE'
+        });
+        setEditPlayerModal(false);
+        setSelectedPlayer(null);
+        fetchPlayers();
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        if (Platform.OS === 'web') {
+          window.alert('Failed to delete player');
+        } else {
+          Alert.alert('Error', 'Failed to delete player');
         }
-      ]
-    );
+      }
+    }
   };
 
   // Toggle availability
