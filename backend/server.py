@@ -231,6 +231,7 @@ def player_helper(player) -> dict:
         "id": str(player["_id"]),
         "name": player["name"],
         "positions": player.get("positions", []),
+        "preferred_foot": player.get("preferred_foot", "right"),
         "is_available": player.get("is_available", False),
         "created_at": player.get("created_at", datetime.utcnow()),
         "updated_at": player.get("updated_at", datetime.utcnow())
