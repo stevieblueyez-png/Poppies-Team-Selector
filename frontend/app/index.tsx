@@ -294,6 +294,35 @@ export default function Index() {
     }
   };
 
+  // Clear all availability
+  const clearAllAvailability = async () => {
+    Alert.alert(
+      'Clear All Availability',
+      'This will untick all players. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const availablePlayers = players.filter(p => p.is_available);
+              for (const player of availablePlayers) {
+                await fetch(`${API_URL}/api/players/${player.id}/availability?is_available=false`, {
+                  method: 'PUT'
+                });
+              }
+              fetchPlayers();
+            } catch (error) {
+              console.error('Error clearing availability:', error);
+              Alert.alert('Error', 'Failed to clear availability');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   // Generate lineup
   const generateLineup = async () => {
     setGeneratingLineup(true);
