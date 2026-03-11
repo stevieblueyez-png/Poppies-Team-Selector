@@ -258,34 +258,36 @@ export default function Index() {
 
   // Delete player
   const handleDeletePlayer = async (playerId: string, playerNameToDelete: string) => {
-    const confirmDelete = Platform.OS === 'web' 
-      ? window.confirm(`Are you sure you want to remove ${playerNameToDelete} from the roster?`)
-      : await new Promise<boolean>((resolve) => {
-          Alert.alert(
-            'Delete Player',
-            `Are you sure you want to remove ${playerNameToDelete} from the roster?`,
-            [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) }
-            ]
-          );
-        });
+    // Simple confirmation that works on both web and mobile
+    let shouldDelete = false;
     
-    if (confirmDelete) {
+    if (Platform.OS === 'web') {
+      shouldDelete = confirm(`Are you sure you want to remove ${playerNameToDelete} from the roster?`);
+    } else {
+      shouldDelete = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'Delete Player',
+          `Are you sure you want to remove ${playerNameToDelete} from the roster?`,
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Delete', style: 'destructive', onPress: () => resolve(true) }
+          ]
+        );
+      });
+    }
+    
+    if (shouldDelete) {
       try {
-        await fetch(`${API_URL}/api/players/${playerId}`, {
+        const response = await fetch(`${API_URL}/api/players/${playerId}`, {
           method: 'DELETE'
         });
-        setEditPlayerModal(false);
-        setSelectedPlayer(null);
-        fetchPlayers();
+        if (response.ok) {
+          setEditPlayerModal(false);
+          setSelectedPlayer(null);
+          fetchPlayers();
+        }
       } catch (error) {
         console.error('Error deleting player:', error);
-        if (Platform.OS === 'web') {
-          window.alert('Failed to delete player');
-        } else {
-          Alert.alert('Error', 'Failed to delete player');
-        }
       }
     }
   };
