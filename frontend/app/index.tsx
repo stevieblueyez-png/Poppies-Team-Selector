@@ -753,23 +753,48 @@ export default function Index() {
         <Text style={styles.headerTitle}>Generate Best XI</Text>
         
         {/* Formation selector */}
-        <Text style={styles.sectionLabel}>Formation</Text>
+        <View style={styles.formationHeaderRow}>
+          <Text style={styles.sectionLabel}>Formation</Text>
+          {calculatingBest && (
+            <View style={styles.calculatingBadge}>
+              <ActivityIndicator size="small" color="#10b981" />
+              <Text style={styles.calculatingText}>Finding best...</Text>
+            </View>
+          )}
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.formationScroll}>
-          {FORMATIONS.map(formation => (
-            <TouchableOpacity
-              key={formation}
-              style={[
-                styles.formationButton,
-                selectedFormation === formation && styles.formationButtonSelected
-              ]}
-              onPress={() => setSelectedFormation(formation)}
-            >
-              <Text style={[
-                styles.formationButtonText,
-                selectedFormation === formation && styles.formationButtonTextSelected
-              ]}>{formation}</Text>
-            </TouchableOpacity>
-          ))}
+          {FORMATIONS.map(formation => {
+            const isRecommended = formation === recommendedFormation;
+            const isSelected = selectedFormation === formation;
+            return (
+              <TouchableOpacity
+                key={formation}
+                style={[
+                  styles.formationButton,
+                  isSelected && styles.formationButtonSelected,
+                  isRecommended && !isSelected && styles.formationButtonRecommended
+                ]}
+                onPress={() => setSelectedFormation(formation)}
+              >
+                {isRecommended && (
+                  <View style={styles.recommendedBadge}>
+                    <Ionicons name="star" size={10} color="#fbbf24" />
+                  </View>
+                )}
+                <Text style={[
+                  styles.formationButtonText,
+                  isSelected && styles.formationButtonTextSelected,
+                  isRecommended && !isSelected && styles.formationButtonTextRecommended
+                ]}>{formation}</Text>
+                {isRecommended && (
+                  <Text style={[
+                    styles.recommendedText,
+                    isSelected && styles.recommendedTextSelected
+                  ]}>Best</Text>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
         
         {/* Mode toggle */}
