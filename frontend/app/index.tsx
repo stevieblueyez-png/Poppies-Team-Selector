@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -28,6 +31,7 @@ interface Player {
   id: string;
   name: string;
   positions: PositionRating[];
+  preferred_foot: string;
   is_available: boolean;
 }
 
@@ -79,12 +83,18 @@ export default function Index() {
   // Form states
   const [playerName, setPlayerName] = useState('');
   const [playerPositions, setPlayerPositions] = useState<PositionRating[]>([]);
+  const [preferredFoot, setPreferredFoot] = useState<'left' | 'right'>('right');
   
   // Lineup states
   const [selectedFormation, setSelectedFormation] = useState('4-4-2');
   const [lineupMode, setLineupMode] = useState<'strength' | 'balanced'>('strength');
   const [lineup, setLineup] = useState<LineupResponse | null>(null);
   const [generatingLineup, setGeneratingLineup] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  
+  // ViewShot ref for capturing lineup
+  const lineupViewRef = useRef<ViewShot>(null);
+  const [savingLineup, setSavingLineup] = useState(false);
 
   // Fetch players
   const fetchPlayers = useCallback(async () => {
@@ -123,7 +133,8 @@ export default function Index() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: playerName.trim(),
-          positions: playerPositions
+          positions: playerPositions,
+          preferred_foot: preferredFoot
         })
       });
       
@@ -131,6 +142,7 @@ export default function Index() {
         setAddPlayerModal(false);
         setPlayerName('');
         setPlayerPositions([]);
+        setPreferredFoot('right');
         fetchPlayers();
       } else {
         Alert.alert('Error', 'Failed to add player');
@@ -151,7 +163,8 @@ export default function Index() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: playerName.trim(),
-          positions: playerPositions
+          positions: playerPositions,
+          preferred_foot: preferredFoot
         })
       });
       
@@ -160,6 +173,7 @@ export default function Index() {
         setSelectedPlayer(null);
         setPlayerName('');
         setPlayerPositions([]);
+        setPreferredFoot('right');
         fetchPlayers();
       } else {
         Alert.alert('Error', 'Failed to update player');
@@ -235,6 +249,54 @@ export default function Index() {
     }
   };
 
+  // Download/Share lineup as image
+  const downloadLineup = async () => {
+    if (!lineupViewRef.current) return;
+    
+    setSavingLineup(true);
+    
+    // Temporarily hide heatmap for the screenshot
+    const originalHeatmapState = showHeatmap;
+    setShowHeatmap(false);
+    
+    // Wait for re-render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      const uri = await lineupViewRef.current.capture?.();
+      
+      if (uri) {
+        const isAvailable = await Sharing.isAvailableAsync();
+        
+        if (isAvailable) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: 'Save Lineup Image'
+          });
+        } else {
+          // Fallback for web
+          if (Platform.OS === 'web') {
+            const link = document.createElement('a');
+            link.href = uri;
+            link.download = `lineup_${selectedFormation}_${new Date().toISOString().split('T')[0]}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            Alert.alert('Success', 'Lineup image saved!');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving lineup:', error);
+      Alert.alert('Error', 'Failed to save lineup image');
+    } finally {
+      // Restore heatmap state
+      setShowHeatmap(originalHeatmapState);
+      setSavingLineup(false);
+    }
+  };
+
   // Toggle position for player
   const togglePosition = (position: string) => {
     const existing = playerPositions.find(p => p.position === position);
@@ -261,6 +323,7 @@ export default function Index() {
     setSelectedPlayer(player);
     setPlayerName(player.name);
     setPlayerPositions(player.positions);
+    setPreferredFoot(player.preferred_foot as 'left' | 'right' || 'right');
     setEditPlayerModal(true);
   };
 
@@ -272,6 +335,50 @@ export default function Index() {
     if (rating >= 2) return 'rgba(249, 115, 22, 0.6)';
     return 'rgba(239, 68, 68, 0.6)';
   };
+
+  // Render foot selector
+  const renderFootSelector = () => (
+    <View style={styles.footSelectorContainer}>
+      <Text style={styles.formLabel}>Preferred Foot</Text>
+      <View style={styles.footToggle}>
+        <TouchableOpacity
+          style={[
+            styles.footButton,
+            preferredFoot === 'left' && styles.footButtonSelected
+          ]}
+          onPress={() => setPreferredFoot('left')}
+        >
+          <Ionicons
+            name="footsteps"
+            size={18}
+            color={preferredFoot === 'left' ? '#fff' : '#6b7280'}
+            style={{ transform: [{ scaleX: -1 }] }}
+          />
+          <Text style={[
+            styles.footButtonText,
+            preferredFoot === 'left' && styles.footButtonTextSelected
+          ]}>Left</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.footButton,
+            preferredFoot === 'right' && styles.footButtonSelected
+          ]}
+          onPress={() => setPreferredFoot('right')}
+        >
+          <Ionicons
+            name="footsteps"
+            size={18}
+            color={preferredFoot === 'right' ? '#fff' : '#6b7280'}
+          />
+          <Text style={[
+            styles.footButtonText,
+            preferredFoot === 'right' && styles.footButtonTextSelected
+          ]}>Right</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   // Render position form
   const renderPositionForm = () => (
@@ -363,6 +470,7 @@ export default function Index() {
           onPress={() => {
             setPlayerName('');
             setPlayerPositions([]);
+            setPreferredFoot('right');
             setAddPlayerModal(true);
           }}
         >
@@ -390,7 +498,20 @@ export default function Index() {
               onPress={() => openEditModal(player)}
             >
               <View style={styles.playerInfo}>
-                <Text style={styles.playerName}>{player.name}</Text>
+                <View style={styles.playerNameRow}>
+                  <Text style={styles.playerName}>{player.name}</Text>
+                  <View style={styles.footBadge}>
+                    <Ionicons
+                      name="footsteps"
+                      size={12}
+                      color="#10b981"
+                      style={player.preferred_foot === 'left' ? { transform: [{ scaleX: -1 }] } : {}}
+                    />
+                    <Text style={styles.footBadgeText}>
+                      {player.preferred_foot === 'left' ? 'L' : 'R'}
+                    </Text>
+                  </View>
+                </View>
                 <View style={styles.positionTags}>
                   {player.positions.map(pos => (
                     <View key={pos.position} style={styles.positionTag}>
@@ -447,7 +568,14 @@ export default function Index() {
                 onPress={() => toggleAvailability(player.id, player.is_available)}
               >
                 <View style={styles.playerInfo}>
-                  <Text style={styles.playerName}>{player.name}</Text>
+                  <View style={styles.playerNameRow}>
+                    <Text style={styles.playerName}>{player.name}</Text>
+                    <View style={styles.footBadgeSmall}>
+                      <Text style={styles.footBadgeTextSmall}>
+                        {player.preferred_foot === 'left' ? 'L' : 'R'}
+                      </Text>
+                    </View>
+                  </View>
                   <Text style={styles.positionsText}>
                     {player.positions.map(p => p.position).join(', ') || 'No positions set'}
                   </Text>
@@ -468,66 +596,79 @@ export default function Index() {
     );
   };
 
-  // Render pitch with players
+  // Render pitch with players (for ViewShot capture)
   const renderPitch = () => {
     if (!lineup) return null;
     
     return (
-      <View style={styles.pitchContainer}>
-        {/* Heatmap overlay */}
-        {lineup.heatmap.map((zone, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.heatmapZone,
-              {
-                left: `${zone.x}%`,
-                top: `${zone.y}%`,
-                width: `${zone.width}%`,
-                height: `${zone.height}%`,
-                backgroundColor: getHeatmapColor(zone.avg_rating)
-              }
-            ]}
-          />
-        ))}
-        
-        {/* Pitch markings */}
-        <View style={styles.pitchMarkings}>
-          <View style={styles.centerCircle} />
-          <View style={styles.centerLine} />
-          <View style={styles.penaltyBoxTop} />
-          <View style={styles.penaltyBoxBottom} />
-        </View>
-        
-        {/* Player positions */}
-        {lineup.lineup.map((slot, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.playerMarker,
-              {
-                left: `${slot.x - 8}%`,
-                top: `${slot.y - 5}%`,
-              }
-            ]}
-          >
-            <View style={[
-              styles.playerDot,
-              !slot.player_id && styles.playerDotEmpty
-            ]}>
-              <Text style={styles.playerDotText}>
-                {slot.player_name ? slot.player_name.charAt(0) : '?'}
+      <ViewShot
+        ref={lineupViewRef}
+        options={{ format: 'png', quality: 0.9 }}
+        style={styles.pitchWrapper}
+      >
+        <View style={styles.pitchContainer}>
+          {/* Heatmap overlay - only show when showHeatmap is true */}
+          {showHeatmap && lineup.heatmap.map((zone, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.heatmapZone,
+                {
+                  left: `${zone.x}%`,
+                  top: `${zone.y}%`,
+                  width: `${zone.width}%`,
+                  height: `${zone.height}%`,
+                  backgroundColor: getHeatmapColor(zone.avg_rating)
+                }
+              ]}
+            />
+          ))}
+          
+          {/* Pitch markings */}
+          <View style={styles.pitchMarkings}>
+            <View style={styles.centerCircle} />
+            <View style={styles.centerLine} />
+            <View style={styles.penaltyBoxTop} />
+            <View style={styles.penaltyBoxBottom} />
+          </View>
+          
+          {/* Formation label when saving without heatmap */}
+          {!showHeatmap && (
+            <View style={styles.formationLabel}>
+              <Text style={styles.formationLabelText}>{lineup.formation}</Text>
+            </View>
+          )}
+          
+          {/* Player positions */}
+          {lineup.lineup.map((slot, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.playerMarker,
+                {
+                  left: `${slot.x - 8}%`,
+                  top: `${slot.y - 5}%`,
+                }
+              ]}
+            >
+              <View style={[
+                styles.playerDot,
+                !slot.player_id && styles.playerDotEmpty
+              ]}>
+                <Text style={styles.playerDotText}>
+                  {slot.player_name ? slot.player_name.charAt(0) : '?'}
+                </Text>
+              </View>
+              <Text style={styles.playerMarkerName} numberOfLines={1}>
+                {slot.player_name || 'Empty'}
+              </Text>
+              <Text style={styles.playerMarkerPos}>
+                {slot.position} {slot.rating > 0 ? `(${slot.rating})` : ''}
               </Text>
             </View>
-            <Text style={styles.playerMarkerName} numberOfLines={1}>
-              {slot.player_name || 'Empty'}
-            </Text>
-            <Text style={styles.playerMarkerPos}>
-              {slot.position} {slot.rating > 0 ? `(${slot.rating})` : ''}
-            </Text>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </ViewShot>
     );
   };
 
@@ -623,36 +764,73 @@ export default function Index() {
         {lineup && (
           <>
             <View style={styles.lineupHeader}>
-              <Text style={styles.lineupTitle}>
-                {lineup.formation} - {lineup.mode === 'strength' ? 'Strongest' : 'Balanced'}
-              </Text>
-              <Text style={styles.lineupRating}>
-                Avg Rating: {lineup.total_rating.toFixed(1)}/5
-              </Text>
+              <View>
+                <Text style={styles.lineupTitle}>
+                  {lineup.formation} - {lineup.mode === 'strength' ? 'Strongest' : 'Balanced'}
+                </Text>
+                <Text style={styles.lineupRating}>
+                  Avg Rating: {lineup.total_rating.toFixed(1)}/5
+                </Text>
+              </View>
+              
+              {/* Download Button */}
+              <TouchableOpacity
+                style={styles.downloadButton}
+                onPress={downloadLineup}
+                disabled={savingLineup}
+              >
+                {savingLineup ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="download-outline" size={18} color="#fff" />
+                    <Text style={styles.downloadButtonText}>Save</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
             
-            {/* Heatmap legend */}
-            <View style={styles.legendContainer}>
-              <Text style={styles.legendTitle}>Strength Map:</Text>
-              <View style={styles.legendItems}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: 'rgba(34, 197, 94, 0.6)' }]} />
-                  <Text style={styles.legendText}>Strong (4-5)</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: 'rgba(234, 179, 8, 0.6)' }]} />
-                  <Text style={styles.legendText}>Decent (3)</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: 'rgba(249, 115, 22, 0.6)' }]} />
-                  <Text style={styles.legendText}>Weak (2)</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: 'rgba(239, 68, 68, 0.6)' }]} />
-                  <Text style={styles.legendText}>Very Weak (1)</Text>
+            {/* Heatmap toggle */}
+            <View style={styles.heatmapToggleContainer}>
+              <Text style={styles.heatmapToggleLabel}>Show Heatmap</Text>
+              <TouchableOpacity
+                style={[
+                  styles.heatmapToggle,
+                  showHeatmap && styles.heatmapToggleOn
+                ]}
+                onPress={() => setShowHeatmap(!showHeatmap)}
+              >
+                <View style={[
+                  styles.heatmapToggleKnob,
+                  showHeatmap && styles.heatmapToggleKnobOn
+                ]} />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Heatmap legend - only show when heatmap is visible */}
+            {showHeatmap && (
+              <View style={styles.legendContainer}>
+                <Text style={styles.legendTitle}>Strength Map:</Text>
+                <View style={styles.legendItems}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: 'rgba(34, 197, 94, 0.6)' }]} />
+                    <Text style={styles.legendText}>Strong (4-5)</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: 'rgba(234, 179, 8, 0.6)' }]} />
+                    <Text style={styles.legendText}>Decent (3)</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: 'rgba(249, 115, 22, 0.6)' }]} />
+                    <Text style={styles.legendText}>Weak (2)</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: 'rgba(239, 68, 68, 0.6)' }]} />
+                    <Text style={styles.legendText}>Very Weak (1)</Text>
+                  </View>
                 </View>
               </View>
-            </View>
+            )}
             
             {renderPitch()}
             
@@ -733,6 +911,7 @@ export default function Index() {
                 placeholderTextColor="#9ca3af"
               />
               
+              {renderFootSelector()}
               {renderPositionForm()}
             </ScrollView>
           </SafeAreaView>
@@ -770,6 +949,7 @@ export default function Index() {
                 placeholderTextColor="#9ca3af"
               />
               
+              {renderFootSelector()}
               {renderPositionForm()}
             </ScrollView>
           </SafeAreaView>
@@ -897,9 +1077,39 @@ const styles = StyleSheet.create({
   playerInfo: {
     flex: 1,
   },
+  playerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   playerName: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  footBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    gap: 2,
+  },
+  footBadgeText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  footBadgeSmall: {
+    backgroundColor: '#374151',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  footBadgeTextSmall: {
+    color: '#10b981',
+    fontSize: 10,
     fontWeight: '600',
   },
   positionTags: {
@@ -1021,6 +1231,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lineupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 24,
     marginBottom: 12,
   },
@@ -1033,6 +1246,54 @@ const styles = StyleSheet.create({
     color: '#10b981',
     fontSize: 14,
     marginTop: 4,
+  },
+  downloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  heatmapToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1f2937',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  heatmapToggleLabel: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  heatmapToggle: {
+    width: 48,
+    height: 28,
+    backgroundColor: '#4b5563',
+    borderRadius: 14,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  heatmapToggleOn: {
+    backgroundColor: '#10b981',
+  },
+  heatmapToggleKnob: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  heatmapToggleKnobOn: {
+    alignSelf: 'flex-end',
   },
   legendContainer: {
     backgroundColor: '#1f2937',
@@ -1064,6 +1325,10 @@ const styles = StyleSheet.create({
   legendText: {
     color: '#9ca3af',
     fontSize: 12,
+  },
+  pitchWrapper: {
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   pitchContainer: {
     backgroundColor: '#166534',
@@ -1118,6 +1383,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderBottomWidth: 0,
     borderColor: 'rgba(255,255,255,0.3)',
+  },
+  formationLabel: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  formationLabelText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   heatmapZone: {
     position: 'absolute',
@@ -1235,6 +1514,34 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     marginBottom: 16,
+  },
+  footSelectorContainer: {
+    marginBottom: 16,
+  },
+  footToggle: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  footButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#374151',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  footButtonSelected: {
+    backgroundColor: '#10b981',
+  },
+  footButtonText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  footButtonTextSelected: {
+    color: '#fff',
   },
   positionFormContainer: {
     marginTop: 8,
