@@ -639,8 +639,19 @@ export default function Index() {
       <View style={styles.tabContent}>
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>This Week's Availability</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{availableCount}/11</Text>
+          <View style={styles.availabilityHeaderButtons}>
+            {availableCount > 0 && (
+              <TouchableOpacity
+                style={styles.clearAllButton}
+                onPress={clearAllAvailability}
+              >
+                <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+                <Text style={styles.clearAllText}>Clear All</Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{availableCount}/11</Text>
+            </View>
           </View>
         </View>
         
