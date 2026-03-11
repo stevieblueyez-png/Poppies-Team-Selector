@@ -1214,6 +1214,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  availabilityHeaderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  clearAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    gap: 4,
+  },
+  clearAllText: {
+    color: '#ef4444',
+    fontSize: 12,
+    fontWeight: '500',
+  },
   playersList: {
     flex: 1,
   },
