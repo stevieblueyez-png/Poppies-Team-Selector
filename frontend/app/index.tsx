@@ -1091,6 +1091,19 @@ export default function Index() {
               
               {renderFootSelector()}
               {renderPositionForm()}
+              
+              {/* Delete Player Button */}
+              <TouchableOpacity
+                style={styles.deletePlayerButton}
+                onPress={() => {
+                  if (selectedPlayer) {
+                    handleDeletePlayer(selectedPlayer.id, selectedPlayer.name);
+                  }
+                }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#fff" />
+                <Text style={styles.deletePlayerButtonText}>Delete Player</Text>
+              </TouchableOpacity>
             </ScrollView>
           </SafeAreaView>
         </KeyboardAvoidingView>
