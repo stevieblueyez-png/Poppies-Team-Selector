@@ -472,6 +472,7 @@ async def create_player(player: PlayerCreate):
     player_dict = {
         "name": player.name,
         "positions": [p.dict() for p in player.positions],
+        "preferred_foot": player.preferred_foot,
         "is_available": False,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
