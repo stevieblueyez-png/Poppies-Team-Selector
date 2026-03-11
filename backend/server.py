@@ -517,6 +517,8 @@ async def update_player(player_id: str, player_update: PlayerUpdate):
         update_data["positions"] = [p.dict() for p in player_update.positions]
     if player_update.is_available is not None:
         update_data["is_available"] = player_update.is_available
+    if player_update.preferred_foot is not None:
+        update_data["preferred_foot"] = player_update.preferred_foot
     
     await db.players.update_one(
         {"_id": ObjectId(player_id)},
