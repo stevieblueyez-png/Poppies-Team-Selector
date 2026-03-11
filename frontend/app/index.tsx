@@ -22,6 +22,8 @@ import * as FileSystem from 'expo-file-system';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
+const TEAM_LOGO_URL = 'https://customer-assets.emergentagent.com/job_youth-football-mgr/artifacts/oe26prbi_image.png';
+
 // Types
 interface PositionRating {
   position: string;
