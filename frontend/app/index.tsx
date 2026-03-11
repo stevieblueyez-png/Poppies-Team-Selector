@@ -564,11 +564,12 @@ export default function Index() {
           </View>
         ) : (
           players.map(player => (
-            <View key={player.id} style={styles.playerCard}>
-              <Pressable 
-                style={styles.playerInfo}
-                onPress={() => openEditModal(player)}
-              >
+            <TouchableOpacity
+              key={player.id}
+              style={styles.playerCard}
+              onPress={() => openEditModal(player)}
+            >
+              <View style={styles.playerInfo}>
                 <View style={styles.playerNameRow}>
                   <Text style={styles.playerName}>{player.name}</Text>
                   <View style={styles.footBadge}>
@@ -592,15 +593,9 @@ export default function Index() {
                     </View>
                   ))}
                 </View>
-              </Pressable>
-              <Pressable
-                style={styles.deleteButton}
-                onPress={() => handleDeletePlayer(player.id, player.name)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
-              </Pressable>
-            </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
