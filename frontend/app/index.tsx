@@ -991,6 +991,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1f2937',
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  teamLogo: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
