@@ -21,13 +21,49 @@ A mobile & web app for managing your grassroots football team roster, player ava
 
 ---
 
-## ✅ Web Deployment (Vercel)
+## ✅ Web Deployment (Vercel / Netlify)
 
 This Expo app **supports web deployment** via `react-native-web`.
 
 ### Prerequisites
 1. Deploy your backend first (see Backend Deployment section)
 2. Get your deployed backend URL
+
+---
+
+### Deploy to Netlify
+
+**Option 1: Netlify CLI**
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Login
+netlify login
+
+# Deploy from project root
+netlify deploy --prod --dir=frontend/dist
+```
+
+**Option 2: Netlify Dashboard (Git-based)**
+1. Push your code to GitHub
+2. Import project in Netlify dashboard
+3. Configure:
+   - **Base directory**: `frontend`
+   - **Build command**: `npx expo export --platform web`
+   - **Publish directory**: `frontend/dist`
+4. Add environment variable:
+   - `EXPO_PUBLIC_BACKEND_URL` = your backend URL
+5. Update `netlify.toml` - replace `https://your-backend-url.com` with your actual backend URL
+6. Deploy
+
+**Option 3: Drag & Drop**
+1. Build locally: `cd frontend && npx expo export --platform web`
+2. Go to https://app.netlify.com/drop
+3. Drag the `frontend/dist` folder
+4. Done!
+
+---
 
 ### Deploy to Vercel
 
