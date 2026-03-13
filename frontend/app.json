@@ -30,10 +30,7 @@
       "backgroundColor": "#111827",
       "themeColor": "#10b981"
     },
-    "experiments": {
-      "typedRoutes": true,
-      "baseUrl": "/youth-football-mgr"
-    },
+    "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
@@ -46,7 +43,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl": "/youth-football-mgr"
     },
     "extra": {
       "eas": {
