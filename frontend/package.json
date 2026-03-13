@@ -9,9 +9,12 @@
     "web": "expo start --web",
     "web:build": "npx expo export --platform web",
     "web:serve": "npx serve dist",
+    "predeploy": "npx expo export --platform web && touch dist/.nojekyll && cp dist/index.html dist/404.html",
+    "deploy": "gh-pages -d dist -t true",
     "lint": "expo lint",
     "reset-project": "node ./scripts/reset-project.js"
   },
+  "homepage": "https://richblend.github.io/youth-football-mgr",
   "dependencies": {
     "@babel/runtime": "^7.20.6",
     "@expo/metro-runtime": "^6.1.2",
